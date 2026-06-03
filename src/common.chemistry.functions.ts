@@ -10,11 +10,12 @@ import type {
     WorkingContext,
 } from "@samatawy/rules";
 import { EvaluationError, FunctionExpression, TypeCheckError } from "@samatawy/rules";
-import { PeriodicTable } from "./periodic.table";
+import { ElementSymbols, PeriodicTable } from "./periodic.table";
 
 const ZERO_ARG_CHEMISTRY_FUNCTIONS = new Set(['element_symbols']);
 
 const ONE_ARG_CHEMISTRY_FUNCTIONS = new Set([
+    'element_symbol', 'element_name',
     'short_formula', 'molecular_weight',
     'atomic_number', 'atomic_weight', 'element_name', 'electron_configuration',
     'valence_electrons', 'common_oxidation_states', 'electronegativity', 'atomic_radius_pm',
@@ -55,6 +56,7 @@ export class CommonChemistryFunction extends FunctionExpression {
 
     public returnsType(checker?: TypeChecker): AtomicType | ArrayType | ObjectType | ObjectArrayType {
         switch (this.name) {
+            case 'element_symbol':
             case 'element_name':
             case 'electron_configuration':
             case 'phase_at_stp':
@@ -63,9 +65,11 @@ export class CommonChemistryFunction extends FunctionExpression {
             case 'element_symbols':
                 return { type: 'string[]' };
 
+            case 'atoms_of_element':
+            case 'fractional_weight_of_element':
             case 'atomic_number':
             case 'atomic_weight':
-            case 'molecular_wt':
+            case 'molecular_weight':
             case 'valence_electrons':
             case 'electronegativity':
             case 'atomic_radius_pm':
@@ -111,13 +115,20 @@ export class CommonChemistryFunction extends FunctionExpression {
         switch (this.name) {
             // Lookups
             case 'element_symbols':
-                return Array.from(Object.keys(PeriodicTable));
+                return ElementSymbols;
+            case 'element_symbol':
+                const elements = Object.values(PeriodicTable);
+                const element = elements.find(el => el.name.toLowerCase() === arg!.toLowerCase());
+                return element?.symbol || 'Unknown element';
+
+            case 'element_name':
+                return PeriodicTable[arg!]?.name || 'Unknown element';
             case 'atomic_number':
                 return PeriodicTable[arg!]?.atomicNumber || NaN;
             case 'atomic_weight':
                 return PeriodicTable[arg!]?.atomicWeight || NaN;
-            case 'element_name':
-                return PeriodicTable[arg!]?.name || 'Unknown element';
+            // case 'element_name':
+            //     return PeriodicTable[arg!]?.name || 'Unknown element';
             case 'electron_configuration':
                 return PeriodicTable[arg!]?.electronConfiguration || 'Unknown configuration';
             case 'valence_electrons':
@@ -158,9 +169,9 @@ export class CommonChemistryFunction extends FunctionExpression {
                     throw new EvaluationError(`Second argument for function ${this.name} must evaluate to a string, but got ${typeof second_arg}`);
                 }
                 const total_atoms = this.atoms_of_element(second_arg, arg!);
-                const atomic_wt = PeriodicTable[arg!]?.atomicWeight || NaN;
+                const atomic_weight = PeriodicTable[arg!]?.atomicWeight || NaN;
                 const molecular_weight = this.molecular_weight(second_arg);
-                return total_atoms * atomic_wt / molecular_weight;
+                return total_atoms * atomic_weight / molecular_weight;
 
             default:
                 throw new EvaluationError(`Unknown chemistry function: ${this.name}`);
@@ -172,8 +183,7 @@ export class CommonChemistryFunction extends FunctionExpression {
     // A formula can have the same element multiple times, e.g. C2H4O6 is the same as CH3COOH, etc.
     private short_formula(formula: string): string {
         const element_counts: { [key: string]: number } = {};
-        const element_symbols = Object.keys(PeriodicTable);
-        element_symbols.map(el => {
+        ElementSymbols.map(el => {
             const regex = new RegExp(`${el}(\\d*)`, 'g');
             let match;
             while ((match = regex.exec(formula)) !== null) {
@@ -190,7 +200,7 @@ export class CommonChemistryFunction extends FunctionExpression {
     // A formula can have the same element multiple times, e.g. C2H4O6 is the same as CH3COOH, etc.
     private molecular_weight(formula: string): number {
         let formula_weight = 0;
-        const element_wts = Object.keys(PeriodicTable).map(el => ({ symbol: el, aw: PeriodicTable[el]?.atomicWeight }));
+        const element_wts = ElementSymbols.map(el => ({ symbol: el, aw: PeriodicTable[el]?.atomicWeight }));
         element_wts.map(el => {
             const regex = new RegExp(`${el.symbol}(\\d*)`, 'g');
             let match;
@@ -219,14 +229,14 @@ export class CommonChemistryFunction extends FunctionExpression {
 
 export class CommonChemistryFunctionsProvider {
 
-    private static _names = [
-        'element_symbols',
-        'short_formula', 'molecular_weight', 'fractional_weight_of_element', 'atoms_of_element',
-        'atomic_number', 'atomic_weight', 'element_name', 'electron_configuration',
-        'valence_electrons', 'common_oxidation_states', 'electronegativity', 'atomic_radius_pm',
-        'ionization_energy_kj_mol', 'electron_affinity_kj_mol',
-        'phase_at_stp', 'melting_point_k', 'boiling_point_k', 'density_g_cm3',
-    ];
+    private static _names = [...ZERO_ARG_CHEMISTRY_FUNCTIONS, ...ONE_ARG_CHEMISTRY_FUNCTIONS, ...TWO_ARG_CHEMISTRY_FUNCTIONS];
+    //     'element_symbols',
+    //     'short_formula', 'molecular_weight', 'fractional_weight_of_element', 'atoms_of_element',
+    //     'atomic_number', 'atomic_weight', 'element_name', 'electron_configuration',
+    //     'valence_electrons', 'common_oxidation_states', 'electronegativity', 'atomic_radius_pm',
+    //     'ionization_energy_kj_mol', 'electron_affinity_kj_mol',
+    //     'phase_at_stp', 'melting_point_k', 'boiling_point_k', 'density_g_cm3',
+    // ];
 
     public static names(): string[] {
         return this._names;

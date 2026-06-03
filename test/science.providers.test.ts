@@ -12,6 +12,7 @@ afterEach(() => {
 });
 
 describe('@samatawy/rules-science', () => {
+
     it('registers science providers with the core function factory', () => {
         FunctionFactory.unregisterProvider(CommonChemistryFunctionsProvider);
         FunctionFactory.unregisterProvider(PhysicsConstantsProvider);
