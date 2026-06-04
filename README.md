@@ -4,6 +4,8 @@ Science-oriented function providers for [@samatawy/rules](https://www.npmjs.com/
 
 This package is designed as an optional plugin. It keeps chemistry and physics helpers outside the core rules engine package while still integrating through the same `FunctionFactory.registerProvider(...)` API.
 
+It currently exposes `37` functions in total (one of them being an alias). Data is provided for `118` periodic table elements.
+
 To report any incorrect data or behaviour, or to request additional features, feel free to [post an issue on Github](https://github.com/samatawy/rules-science/issues).
 
 This package can be used by:
@@ -50,6 +52,8 @@ The same package entry works in both Node.js and browser builds, with ESM and Co
 
 - `CommonChemistryFunctionsProvider`
 - `PhysicsConstantsProvider`
+
+There are `20` chemistry-related functions and `17` physics-related constants (as functions: one of them being an alias).
 
 ## Common Chemistry Functions
 

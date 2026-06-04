@@ -38,5 +38,8 @@ describe('@samatawy/rules-science', () => {
         expect(parser.parse('molecular_weight("H2O")').evaluate(context)).toBeCloseTo(18.015, 3);
         expect(parser.parse('element_symbols()').evaluate(context)).toContain('H');
         expect(parser.parse('avogadro()').evaluate(context)).toBe(6.02214076e23);
+
+        const elements = parser.parse('element_symbols()').evaluate(context);
+        console.debug(elements.length + ' elements');
     });
 });
